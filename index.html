@@ -685,7 +685,29 @@ if(overlay){
    feltene natively; JSON via no-cors blir tekst-blob → tomme felter).
    Meta-pixel Lead fyres på takkesiden (/takk.html), ikke her. */
 var MAKE_WEBHOOK_URL='https://hook.eu1.make.com/isccy3sl7gaytk24clsuqyr1q3iwe3cg';
+/* GoHighLevel Inbound Webhook (Frøyd-subkonto, PDRN) — CORS er åpen (ACAO:*),
+   så vi sender JSON med keepalive parallelt med Make. Feiler GHL, går Make likevel. */
+var GHL_WEBHOOK_URL='https://services.leadconnectorhq.com/hooks/wp232IUIU79RtjXvLe6B/webhook-trigger/c5fa5ab4-3d10-4c72-9496-073a5d27a480';
 var TAKK_URL='takk.html';
+
+function froydSendGHL(data){
+  var parts=(data.full_name||'').split(/\s+/).filter(Boolean);
+  var payload={
+    full_name: data.full_name,
+    first_name: parts.length?parts[0]:'',
+    last_name: parts.length>1?parts.slice(1).join(' '):'',
+    phone: data.phone,
+    email: data.email,
+    treatment: data.treatment,
+    source: data.kilde,
+    page_url: data.side_url,
+    fbclid: data.fbclid,
+    submitted_at: new Date().toISOString()
+  };
+  try{
+    fetch(GHL_WEBHOOK_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
+  }catch(err){}
+}
 
 function froydNormPhone(p){
   var d=(p||'').replace(/[^0-9+]/g,'');
@@ -715,6 +737,7 @@ document.getElementById('leadForm').addEventListener('submit',function(e){
   try{ if(!(navigator.sendBeacon && navigator.sendBeacon(MAKE_WEBHOOK_URL, body)))
     fetch(MAKE_WEBHOOK_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
   }catch(err){ try{fetch(MAKE_WEBHOOK_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});}catch(e2){} }
+  froydSendGHL(data);
   try{sessionStorage.setItem('froyd_lead_done','1');}catch(err){}
   var msg=document.getElementById('formMsg');if(msg)msg.style.display='block';
   setTimeout(function(){window.location.href=TAKK_URL;},500);
