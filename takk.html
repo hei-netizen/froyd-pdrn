@@ -15,7 +15,9 @@ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','1332588077692694');
 fbq('track','PageView');
-fbq('track','Lead');
+var eid='';try{eid=sessionStorage.getItem('froyd_lead_eid')||'';}catch(e){}
+/* eventID = samme som CAPI-eventet fra skjemaet → Meta teller leadet én gang */
+if(eid){fbq('track','Lead',{},{eventID:eid});}else{fbq('track','Lead');}
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1332588077692694&ev=Lead&noscript=1"></noscript>
 <link rel="preconnect" href="https://fonts.googleapis.com">

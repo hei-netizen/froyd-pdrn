@@ -698,6 +698,21 @@ var MAKE_WEBHOOK_URL='https://hook.eu1.make.com/isccy3sl7gaytk24clsuqyr1q3iwe3cg
 var GHL_WEBHOOK_URL='https://services.leadconnectorhq.com/hooks/wp232IUIU79RtjXvLe6B/webhook-trigger/c5fa5ab4-3d10-4c72-9496-073a5d27a480';
 var TAKK_URL='takk.html';
 
+/* ===== Meta CAPI (16.10.2026) — samme Lead server-side via Supabase-funksjonen meta-capi.
+   event_id deles med takk.html (fbq eventID) → Meta dedupliserer browser + server. */
+var CAPI_URL='https://wzgjpwzyazmchipikotp.supabase.co/functions/v1/meta-capi';
+function froydCookie(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');return m?decodeURIComponent(m[1]):'';}
+function froydSendCAPI(data){
+  var eid='lead-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+  try{sessionStorage.setItem('froyd_lead_eid',eid);}catch(err){}
+  var fbc=froydCookie('_fbc')||(data.fbclid?'fb.1.'+Date.now()+'.'+data.fbclid:'');
+  var p=JSON.stringify({pixel:'1332588077692694',event_name:'Lead',event_id:eid,event_source_url:data.side_url,
+    email:data.email,phone:data.phone,full_name:data.full_name,content_name:data.treatment,fbp:froydCookie('_fbp'),fbc:fbc});
+  try{ if(!(navigator.sendBeacon && navigator.sendBeacon(CAPI_URL,new Blob([p],{type:'text/plain'}))))
+    fetch(CAPI_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'text/plain'},body:p}).catch(function(){});
+  }catch(err){}
+}
+
 function froydSendGHL(data){
   var parts=(data.full_name||'').split(/\s+/).filter(Boolean);
   var payload={
@@ -746,6 +761,7 @@ document.getElementById('leadForm').addEventListener('submit',function(e){
     fetch(MAKE_WEBHOOK_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
   }catch(err){ try{fetch(MAKE_WEBHOOK_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});}catch(e2){} }
   froydSendGHL(data);
+  froydSendCAPI(data);
   try{sessionStorage.setItem('froyd_lead_done','1');}catch(err){}
   var msg=document.getElementById('formMsg');if(msg)msg.style.display='block';
   setTimeout(function(){window.location.href=TAKK_URL;},500);
